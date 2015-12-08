@@ -39,7 +39,6 @@ def recommend(time, user_features, article_ids):
     ucb_max = -1
     x_max = np.zeros(N)
     id_max = np.random.choice(article_ids, size=1)[0]
-    print(id_max)
     z = np.array(user_features)
 
     for i in range(len(article_ids)):
