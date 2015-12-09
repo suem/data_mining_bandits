@@ -16,10 +16,9 @@ last_z = np.array([])
 
 
 def set_articles(articles):
-    for i in range(len(articles)):
-        article_id = articles[i][0]
-        x = articles[i][1:]
-        Articles[article_id] = x
+    for a in articles:
+        article_id = a[0]
+        Articles[article_id] = a[1:]
         M_x[article_id] = np.eye(N)
         b_x[article_id] = np.zeros(N)
 
@@ -29,7 +28,7 @@ def update(reward):
     article_id = last_id
     if Articles.has_key(article_id):
         z = last_z
-        M_x[article_id] += z.dot(z.transpose())
+        M_x[article_id] += z.dot(z)
         b_x[article_id] += y*z
 
 
@@ -47,9 +46,8 @@ def recommend(time, user_features, article_ids):
             x = Articles[article_id]
             m = M_x[article_id]
             b = b_x[article_id]
-            m_inv = np.linalg.inv(m)
-            w = m_inv.dot(b)
-            ucb = w.transpose().dot(z) + ALPHA * np.sqrt(z.transpose().dot(m_inv).dot(z))
+            w = np.linalg.solve(m, b)
+            ucb = w.dot(z) + ALPHA*np.sqrt(z.dot(np.linalg.solve(m, z)))
             if ucb_max < ucb:
                 ucb_max = ucb
                 id_max = article_id
@@ -61,3 +59,4 @@ def recommend(time, user_features, article_ids):
 # this is the version that will be called. Leave it as is
 def reccomend(time, user_features, articles):
     return recommend(time, user_features, articles)
+
