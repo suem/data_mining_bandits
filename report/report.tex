@@ -1,0 +1,95 @@
+
+\documentclass[a4paper, 11pt]{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage[pdftex]{hyperref}
+
+% Lengths and indenting
+\setlength{\textwidth}{16.5cm}
+\setlength{\marginparwidth}{1.5cm}
+\setlength{\parindent}{0cm}
+\setlength{\parskip}{0.15cm}
+\setlength{\textheight}{22cm}
+\setlength{\oddsidemargin}{0cm}
+\setlength{\evensidemargin}{\oddsidemargin}
+\setlength{\topmargin}{0cm}
+\setlength{\headheight}{0cm}
+\setlength{\headsep}{0cm}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+\title{Data Mining: Learning From Large Data Sets\\\vspace{2mm}\Large{Fall Semester 2015}}
+\author{\{usamuel, adavidso, kurmannn\}@student.ethz.ch}
+\date{\today}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+\section*{Extracting Representative Elements} 
+
+% \texttt{Briefly describe the steps used to produce the solution. Feel free to add plots or screenshots if you think it's necessary. The report should contain a maximum of 2 pages.
+% Keep in mind that you only have to submit one report per group. Please indicate the contribution of each group member to the project.}
+
+\paragraph{Problem formulation.\!\!\!}
+
+%from PDF:
+%The goal of this task is to learn a policy that explores and exploits among available choices in order to learn user preferences and recommend news articles to users. For this task we will use real-world log data shared by Yahoo!. The data was collected over a 10 day period and consists of 5 million log lines that capture the interaction between user visits and 271 news articles, one of which was randomly displayed for every user visit. In each round, you are given a user context and a list of available articles for recommendation. Your task is to then select one article from this pool. If the article you selected matches the one displayed to the user (in the log file), then your policy is evaluated for that log line. Otherwise, the line is discarded. Since the articles were displayed uniformly at random during the data collection phase, there is approximately 1 in 20 chance that any given line will be evaluated.
+
+
+
+
+
+%from website: The goal of this project is to extract representative elements from a large image data set. The quality of the selected set of points is measured by the sum of squared distances from each point of the dataset to the closest point in the selected set. 
+
+%PDF: The goal of this project is to extract representative elements from a large image data set. If we extract a representative subset C from a data set D, the quality of our selection is quantified by the average distance of the elements of D to their closest representative in C, that is [formula]. Ideally, we would like to minimize the above expression under the constraint that we pick k elements to include in C, which is equivalent to performing K-means clustering. However, this is in general an NP-hard problem, so we have to resort to heuristic methods, such as Lloyd’s algorithm. For large data sets, even Lloyd’s algorithm can be computationally prohibitive, therefore in this project you will solve this problem using the map-reduce framework.
+
+Given a set of features of images that belong to different (unknown) clusters, the goal was to find representative elements for each cluster. The quality of our selection is quantified by the sum of quadratic distances that each representative has to the elements of its cluster.
+This problem statement is equivalent to the solution of k-means, but we were able to use a map-reduce framework to speed up this process.
+
+%Prev. Problem: The goal of this project was to construct an SVM that classifies images into one of two classes, these classes being images of people versus images of nature. The images were provided in the form of precomputed feature vectors, each containing $400$ features.
+
+\paragraph{Approach and Results.\!\!\!}
+
+To solve this problem, we used SciKit Learn's integrated implementation of kmeans, which internally uses kmeans++ to generate good starting centers that help the algorithm converge faster.
+
+In our initial approach, we ran kmeans on the mappers to compute k=200 centers each, which were then all passed to the reducer, who in turn ran kmeans to reduce the number of centers to 100, which we then proceeded to output as our result. Increasing the number of centers computed by the mappers to 1000 gave us the surprisingly high score of 9.17742.
+
+This was without taking into the consideration the weights of the clusters/coresets passed by the mappers. We tried to override SciPy's kmeans update centers method, but we failed because it is defined in the binary file \verb|_k_means.x86_64-linux-gnu.so|. Another approach was to adapt the mapper to output each center multiple times proportionally to its weight. However, this approach didn't improve our score.
+
+In our third approach, we kept the mappers mostly the same, but we tried to take into account the weights of the centers outputted by the mappers. For this, we stopped performing kmeans in the reduce step, but instead opted for merging the points manually. For this, the reducer selected a random center and merged it with the closest other center by taking a weighted average.
+This approach netted us with a score of 9.02585.
+
+
+
+%OLD
+%We constructed a classifier by running SGD in each mapper. Each mapper reads values $(y_t,x_t)$, for $1\leq t\leq T$, and then computes $w_t$ using the SGD algorithm, as presented in class. The final result of the mapper is the average of all $w_t$. The reducer collects and averages over these hyperplanes, and outputs the final classifier $w$.
+
+%We tried several approaches to compute a good classifier for the image classification problem.
+
+%At first, we used OCP to compute a linear classifier. The features were used ``as is" with the addition of a constant $1$ to account for an intercept. We chose $\eta_t=1/\sqrt{t}$ and $\lambda=1$. This approach yielded a score of about $60$ percent.
+
+%To improve on this, we tried to process the feature vectors in random order, as is done in SGD. We adapted the mapper to first store the entire input in a matrix. This matrix was then processed uniformly at random. To make the most out of the available computation time, we kept on reading from the matrix in random order for around $4.5$ minutes. In addition, we chose $\lambda=1/N$, with $N$ being the number of feature vectors passed to the mapper, and $\eta= 1/(\lambda t)$. 
+%This approach yielded a score of approximately 70 percent.
+
+%We were not able to improve on this and therefore assumed that the feature vectors were not (sufficiently) linearly separable. We experimented with several non-linear feature transformations, and were able to boost our score to 81 percent with the following transformation, which uses built-in NumPy functions:
+%\begin{equation*}
+%\texttt{x <- [numpy.sqrt(x), numpy.diff(x), numpy.gradient(x)]}.
+%\end{equation*}
+%This might seem like an odd transformation, but the motivation for doing this was that the original feature vectors were sparse, and so we wanted to remove some of this sparsity, which is why we use \texttt{diff} and \texttt{gradient}.
+
+%Finally, we were able to beat the hard baseline by using random Fourier features on top of the above transformed features. Sampling 3,500 of these resulted in a score of 84 percent. At this point in time, we noticed that the first entry in every original feature vector in the training set was zero, so we dropped this feature.
+
+\paragraph{Workload distribution.\!\!\!}
+
+Alexander implemented the initial approach. At first there were some technical problems that caused his code to crash on the cluster. This issue was
+resolved by Samuel. The entire group then tried to optimize the parameters of the first approach and discussed other approaches. Nico tried to overwrite 
+SciKits internal kmeans implementation. Samuel adapted the initial solution to output centers multiple times. 
+Alexander implemented the final approach where the reducer merges the centers. Nico wrote the final report.
+
+
+
+%OLD: Nico and Alexander wrote the initial structure for the mapper and reducer. Samuel implemented the basic OCP algorithm. Alexander extended this to include SGD and he also came up with the non-linear transformations. Samuel implemented random Fourier features (with errors), and Alexander corrected the errors, which then resulted in our final mapper. Everybody contributed to the report.
+
+\end{document}
