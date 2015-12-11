@@ -3,7 +3,7 @@ import numpy.random
 
 # number of dimensions (user features and article features, they are the same here
 N = 6
-ALPHA = 1
+ALPHA = 0.28
 
 # dictionary to keep all M matrices for each article x
 M_x = {}
