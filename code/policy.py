@@ -3,7 +3,7 @@ import numpy.random
 
 # number of dimensions (user features and article features, they are the same here
 N = 6
-ALPHA = 2
+ALPHA = 1
 
 # dictionary to keep all M matrices for each article x
 M_x = {}
@@ -26,7 +26,9 @@ def update(reward):
     if not y == -1:
         article_id = last_id
         z = last_z
-        M_x[article_id] += np.outer(z, z)
+        m = M_x[article_id]
+        mz = m.dot(z)
+        M_x[article_id] -= np.outer(mz, z.dot(m))/(1.0 + z.dot(mz))
         b_x[article_id] += y*z
 
 
@@ -44,11 +46,11 @@ def recommend(time, user_features, article_ids):
             b_x[article_id] = np.zeros(N)
         m = M_x[article_id]
         b = b_x[article_id]
-        m_inv = np.linalg.inv(m)
+        #m_inv = np.linalg.inv(m)
         # w = np.linalg.solve(m,b)
-        w = m_inv.dot(b)
+        w = m.dot(b)
         # ucb = w.dot(z) + ALPHA*np.sqrt(z.dot(np.linalg.solve(m, z)))
-        ucb = w.dot(z) + ALPHA*np.sqrt(z.dot(m_inv.dot(z)))
+        ucb = w.dot(z) + ALPHA*np.sqrt(z.dot(m.dot(z)))
         if ucb_max < ucb:
             ucb_max = ucb
             id_max = article_id

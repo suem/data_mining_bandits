@@ -1,0 +1,5 @@
+submission scores for linucb
+id alpha score
+4359 2 0.054311
+4360 3 0.050678
+4361 1 0.060979
