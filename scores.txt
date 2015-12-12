@@ -11,3 +11,6 @@ id alpha score
 4375 0.35 0.065050
 4377 0.28 0.063145
 
+submission scores for ts
+id score
+4425 0.05887
