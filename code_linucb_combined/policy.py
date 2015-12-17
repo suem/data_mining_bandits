@@ -1,7 +1,7 @@
 
 import numpy as np
 
-D = 6
+D = 10
 ALPHA = 0.3
 
 A_inv_dict = {}
@@ -15,9 +15,8 @@ xu = None
 
 def set_articles(articles):
     global A_inv_dict, b_dict, theta_dict, x_dict
-    x_dict.update(articles)
-    for k in x_dict:
-        x_dict[k] = x_dict[k][3:]
+    for aid in articles:
+        x_dict[aid] = articles[aid][1:]
     k = x_dict.keys()
     A_inv_dict.update(dict.fromkeys(k, np.eye(D)))
     b_dict.update(dict.fromkeys(k, np.zeros(D)))
@@ -42,11 +41,11 @@ def recommend(time, user_features, articles):
     p_max = np.float('-inf')
     a_max = None
     xu_max = None
-    u = user_features[3:]
+    u = user_features[1:]
     for art in articles:
         A_inv = A_inv_dict[art]
         theta = theta_dict[art]
-        x = x_dict[art]
+        x = list(x_dict[art])
         x.extend(u)
         xu = np.array(x)
         p = theta.dot(xu) + ALPHA*np.sqrt(xu.dot(A_inv).dot(xu))
@@ -54,6 +53,7 @@ def recommend(time, user_features, articles):
             p_max = p
             a_max = art
             xu_max = xu
+    a = a_max
     xu = xu_max
     return a_max
 
