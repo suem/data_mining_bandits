@@ -13,7 +13,11 @@ if __name__ == "__main__":
             article = [int(features[0])]
             article.extend(float(x) for x in features[1:])
             articles.append(article)
-        policy.set_articles(articles)
+        articles_dict = {}
+        for x in articles:
+            articles_dict[x[0]] = x[1:]
+        # policy.set_articles(articles)
+        policy.set_articles(articles_dict)
     
     score = 0
     total_evaluated = 0
