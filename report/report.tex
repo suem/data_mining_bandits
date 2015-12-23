@@ -34,32 +34,29 @@
 
 \paragraph{Problem formulation.\!\!\!}
 
-%from PDF:
-%The goal of this task is to learn a policy that explores and exploits among available choices in order to learn user preferences and recommend news articles to users. For this task we will use real-world log data shared by Yahoo!. The data was collected over a 10 day period and consists of 5 million log lines that capture the interaction between user visits and 271 news articles, one of which was randomly displayed for every user visit. In each round, you are given a user context and a list of available articles for recommendation. Your task is to then select one article from this pool. If the article you selected matches the one displayed to the user (in the log file), then your policy is evaluated for that log line. Otherwise, the line is discarded. Since the articles were displayed uniformly at random during the data collection phase, there is approximately 1 in 20 chance that any given line will be evaluated.
-
-
-
-
-
 %from website: The goal of this project is to extract representative elements from a large image data set. The quality of the selected set of points is measured by the sum of squared distances from each point of the dataset to the closest point in the selected set. 
 
 %PDF: The goal of this project is to extract representative elements from a large image data set. If we extract a representative subset C from a data set D, the quality of our selection is quantified by the average distance of the elements of D to their closest representative in C, that is [formula]. Ideally, we would like to minimize the above expression under the constraint that we pick k elements to include in C, which is equivalent to performing K-means clustering. However, this is in general an NP-hard problem, so we have to resort to heuristic methods, such as Lloyd’s algorithm. For large data sets, even Lloyd’s algorithm can be computationally prohibitive, therefore in this project you will solve this problem using the map-reduce framework.
 
-Given a set of features of images that belong to different (unknown) clusters, the goal was to find representative elements for each cluster. The quality of our selection is quantified by the sum of quadratic distances that each representative has to the elements of its cluster.
-This problem statement is equivalent to the solution of k-means, but we were able to use a map-reduce framework to speed up this process.
+%Given a set of features of images that belong to different (unknown) clusters, the goal was to find representative elements for each cluster. The quality of our selection is quantified by the sum of quadratic distances that each representative has to the elements of its cluster.
+%This problem statement is equivalent to the solution of k-means, but we were able to use a map-reduce framework to speed up this process.
 
 %Prev. Problem: The goal of this project was to construct an SVM that classifies images into one of two classes, these classes being images of people versus images of nature. The images were provided in the form of precomputed feature vectors, each containing $400$ features.
 
 \paragraph{Approach and Results.\!\!\!}
 
-To solve this problem, we used SciKit Learn's integrated implementation of kmeans, which internally uses kmeans++ to generate good starting centers that help the algorithm converge faster.
 
-In our initial approach, we ran kmeans on the mappers to compute k=200 centers each, which were then all passed to the reducer, who in turn ran kmeans to reduce the number of centers to 100, which we then proceeded to output as our result. Increasing the number of centers computed by the mappers to 1000 gave us the surprisingly high score of 9.17742.
+We first implemented LinUCB, which turned out to be too slow when run on the cluster, we tried UCB1, ignoring all features of users and data. While this ran faster, the score had severely deteriorated, so we switched back to using LinUCB. Using the Sherman-Morrison formula to prevent re-computing inverses, we managed to get LinUCB to terminate in time, which resulted in a score of 0.06567. attempts to improve upon this result using a hybrid approach, random feature transformation proved both fruitless. 
 
-This was without taking into the consideration the weights of the clusters/coresets passed by the mappers. We tried to override SciPy's kmeans update centers method, but we failed because it is defined in the binary file \verb|_k_means.x86_64-linux-gnu.so|. Another approach was to adapt the mapper to output each center multiple times proportionally to its weight. However, this approach didn't improve our score.
 
-In our third approach, we kept the mappers mostly the same, but we tried to take into account the weights of the centers outputted by the mappers. For this, we stopped performing kmeans in the reduce step, but instead opted for merging the points manually. For this, the reducer selected a random center and merged it with the closest other center by taking a weighted average.
-This approach netted us with a score of 9.02585.
+
+%To solve this problem, we used SciKit Learn's integrated implementation of kmeans, which internally uses kmeans++ to generate good starting centers that help the algorithm converge faster.
+
+%In our initial approach, we ran kmeans on the mappers to compute k=200 centers each, which were then all passed to the reducer, who in turn ran kmeans to reduce the number of centers to 100, which we then proceeded to output as our result. Increasing the number of centers computed by the mappers to 1000 gave us the surprisingly high score of 9.17742.
+
+%This was without taking into the consideration the weights of the clusters/coresets passed by the mappers. We tried to override SciPy's kmeans update centers method, but we failed because it is defined in the binary file \verb|_k_means.x86_64-linux-gnu.so|. Another approach was to adapt the mapper to output each center multiple times proportionally to its weight. However, this approach didn't improve our score.
+
+%In our third approach, we kept the mappers mostly the same, but we tried to take into account the weights of the centers outputted by the mappers. For this, we stopped performing kmeans in the reduce step, but instead opted for merging the points manually. For this, the reducer selected a random center and merged it with the closest other center by taking a weighted average. This approach netted us with a score of 9.02585.
 
 
 
@@ -83,10 +80,9 @@ This approach netted us with a score of 9.02585.
 
 \paragraph{Workload distribution.\!\!\!}
 
-Alexander implemented the initial approach. At first there were some technical problems that caused his code to crash on the cluster. This issue was
-resolved by Samuel. The entire group then tried to optimize the parameters of the first approach and discussed other approaches. Nico tried to overwrite 
-SciKits internal kmeans implementation. Samuel adapted the initial solution to output centers multiple times. 
-Alexander implemented the final approach where the reducer merges the centers. Nico wrote the final report.
+Samuel wrote the implementation of LinUCB and UCB1. ALexander improved it with the Sherman-Morrison formula. Alexander tried out Thompson sampling.
+
+%Alexander implemented the initial approach. At first there were some technical problems that caused his code to crash on the cluster. This issue was resolved by Samuel. The entire group then tried to optimize the parameters of the first approach and discussed other approaches. Nico tried to overwrite SciKits internal kmeans implementation. Samuel adapted the initial solution to output centers multiple times. Alexander implemented the final approach where the reducer merges the centers. Nico wrote the final report.
 
 
 
